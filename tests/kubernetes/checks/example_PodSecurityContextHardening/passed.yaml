@@ -1,0 +1,200 @@
+# Manifests 1-10: the pod-level securityContext hardens the workload.
+# Every resource must be reported as PASSED by CKV_K8S_160.
+---
+# 1. Pod: non-root enforced via runAsNonRoot and the runtime default seccomp profile
+apiVersion: v1
+kind: Pod
+metadata:
+  name: p1-pod-non-root-runtime-default
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsGroup: 3000
+    fsGroup: 2000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 2. Pod: non-root enforced via an explicit non-zero runAsUser
+apiVersion: v1
+kind: Pod
+metadata:
+  name: p2-pod-run-as-user
+spec:
+  securityContext:
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 3. Deployment: hardened pod template security context
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p3-hardened-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hardened
+  template:
+    metadata:
+      labels:
+        app: hardened
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 4. DaemonSet: hardened pod template security context
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: p4-hardened-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: hardened
+  template:
+    metadata:
+      labels:
+        app: hardened
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent
+          image: registry.example.com/agent:1.0.0
+---
+# 5. StatefulSet: hardened pod template security context
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: p5-hardened-statefulset
+spec:
+  serviceName: hardened
+  selector:
+    matchLabels:
+      app: hardened
+  template:
+    metadata:
+      labels:
+        app: hardened
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 6. ReplicaSet: hardened pod template security context
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: p6-hardened-replicaset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hardened
+  template:
+    metadata:
+      labels:
+        app: hardened
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 7. ReplicationController: hardened pod template security context
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: p7-hardened-replicationcontroller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hardened
+    spec:
+      securityContext:
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 8. Job: hardened pod template security context
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: p8-hardened-job
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: registry.example.com/worker:1.0.0
+      restartPolicy: Never
+---
+# 9. CronJob: hardened nested job template security context
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: p9-hardened-cronjob
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: hello
+              image: registry.example.com/hello:1.0.0
+          restartPolicy: OnFailure
+---
+# 10. Pod: full restricted-style security context including group and supplemental groups
+apiVersion: v1
+kind: Pod
+metadata:
+  name: p10-pod-full-restricted-context
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+    supplementalGroups:
+      - 4000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0

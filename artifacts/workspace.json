@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid36769",
+  "B": "/home/dev/feedback/uid36769",
+  "sha": "434e9cf8bcbaddd5f4b42f46a3f973ee9d61c0ba",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "bridgecrewio",
+    "repo": "checkov",
+    "sha": "434e9cf8bcbaddd5f4b42f46a3f973ee9d61c0ba"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "checkov",
+    "cloneUrl": "https://github.com/Rrr119/checkov.git"
+  },
+  "at": "2026-11-23T17:02:37.017Z"
+}

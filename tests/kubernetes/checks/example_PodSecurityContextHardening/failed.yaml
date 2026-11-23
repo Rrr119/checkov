@@ -1,0 +1,158 @@
+# Manifests 11-20: the pod-level securityContext is missing or not hardened.
+# Every resource must be reported as FAILED by CKV_K8S_160.
+---
+# 11. Pod: no securityContext at all
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f11-pod-no-security-context
+spec:
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 12. Pod: non-root is set but the seccomp profile is missing
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f12-pod-non-root-without-seccomp
+spec:
+  securityContext:
+    runAsNonRoot: true
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 13. Pod: runtime default seccomp is set but root execution is allowed
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f13-pod-seccomp-without-non-root
+spec:
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 14. Pod: runAsNonRoot is explicitly disabled
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f14-pod-run-as-non-root-false
+spec:
+  securityContext:
+    runAsNonRoot: false
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 15. Pod: runAsUser is root (UID 0)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f15-pod-run-as-user-zero
+spec:
+  securityContext:
+    runAsUser: 0
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 16. Pod: a custom (Localhost) seccomp profile is not the runtime default profile
+apiVersion: v1
+kind: Pod
+metadata:
+  name: f16-pod-localhost-seccomp
+spec:
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: Localhost
+      localhostProfile: profiles/custom.json
+  containers:
+    - name: app
+      image: registry.example.com/app:1.0.0
+---
+# 17. Deployment: the pod template has no securityContext
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: f17-deployment-without-security-context
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unhardened
+  template:
+    metadata:
+      labels:
+        app: unhardened
+    spec:
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 18. StatefulSet: seccomp is configured but root execution is still allowed
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: f18-statefulset-root-allowed
+spec:
+  serviceName: unhardened
+  selector:
+    matchLabels:
+      app: unhardened
+  template:
+    metadata:
+      labels:
+        app: unhardened
+    spec:
+      securityContext:
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/app:1.0.0
+---
+# 19. DaemonSet: non-root is configured but without a seccomp profile
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: f19-daemonset-without-seccomp
+spec:
+  selector:
+    matchLabels:
+      app: unhardened
+  template:
+    metadata:
+      labels:
+        app: unhardened
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: agent
+          image: registry.example.com/agent:1.0.0
+---
+# 20. CronJob: the nested job template has no securityContext
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: f20-cronjob-without-security-context
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hello
+              image: registry.example.com/hello:1.0.0
+          restartPolicy: OnFailure
